@@ -11,15 +11,12 @@ export const Config: Schema<Config> = Schema.object({
 
 
 declare module 'koishi' {
-  interface Tables {
-    bind: Schedule
+  interface Binding {
+    pid: string
+    aid: number
   }
 }
 
-export interface Schedule {
-  pid: number
-  aid: number
-}
 
 declare module 'koishi' {
   interface Tables {
@@ -86,8 +83,9 @@ for (let i = 0; i < 10; i++) {
 
 ctx.command('签到', '每日签到')
             .action(async ({ session }) => {
-              await ctx.database.get('bind', [session.userId], ['aid'])
-              
+              const userId = await ctx.database.get('binding', {pid: [session.userId]}, ['aid'])[0]?.aid
+              // console.log(userId)
+              const userInfo = await ctx.database.get('signin', {id: userId})
             })
 
 }
