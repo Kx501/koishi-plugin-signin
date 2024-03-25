@@ -25,8 +25,8 @@ declare module 'koishi' {
 }
 
 export interface Schedule {
-  id: number
-  lastSignInDate: Date
+  id: string
+  lastSignInDate: string
   consecutiveDays: number
 }
 
@@ -34,8 +34,8 @@ export function apply(ctx: Context) {
   // 这里是新增表的接口类型
   ctx.model.extend('signin', {
     // 各字段的类型声明
-    id: 'unsigned',
-    lastSignInDate: 'timestamp',
+    id: 'string',
+    lastSignInDate: 'string',
     consecutiveDays: 'integer',
   })
 
@@ -88,14 +88,8 @@ export function apply(ctx: Context) {
       const userInfo = await ctx.database.get('signin', { id: userId })
       console.log(userInfo)
       // 添加用户数据
-      if (userInfo) {
+      if (userInfo.length > 0) {
 
-        
-        // 假设有一个能够读取和更新数据库的方法
-        const database = {
-          lastSignInDate: "2024-03-24", // 假设数据库中记录的上次签到日期是 2024-03-24
-          consecutiveDays: 5 // 假设数据库中记录的连续签到天数是 5
-        };
 
         // 计算连续签到加成
         function calculateBonus(consecutiveDays) {
@@ -105,21 +99,12 @@ export function apply(ctx: Context) {
           return 0;
         }
 
-        // 更新数据库中的签到信息
-        function updateDatabase(lastSignInDate, consecutiveDays) {
-          // 假设有一个更新数据库的方法
-          // updateDatabaseMethod(lastSignInDate, consecutiveDays);
-          // 更新数据库的伪代码如下：
-          database.lastSignInDate = lastSignInDate;
-          database.consecutiveDays = consecutiveDays;
-        }
-
         // 模拟读取数据库中的签到信息
-        const lastSignInDate= userInfo[0];
-        const consecutiveDays = userInfo[1];
+        const lastSignInDate = String(userInfo[0]);
+        const consecutiveDays = Number(userInfo[1]);
 
         // 假设当前日期是 2024-03-25
-        const currentDate = "2024-03-25";
+        const currentDate = String(new Date());
 
         // 计算连续签到天数是否连续
         let newConsecutiveDays = consecutiveDays;
@@ -137,15 +122,18 @@ export function apply(ctx: Context) {
         const extraPoints = Math.floor(basePoints * bonus);
 
         // 更新数据库中的签到信息
-        updateDatabase(currentDate, newConsecutiveDays);
+        await ctx.database.set('signin', { id: session.userId }, { lastSignInDate: currentDate, consecutiveDays: newConsecutiveDays });
 
         // 输出结果
         console.log(`连续签到天数：${newConsecutiveDays}`);
         console.log(`连续签到加成：${bonus * 100}%`);
         console.log(`基础积分：${basePoints}`);
         console.log(`额外积分：${extraPoints}`);
+      }
 
-
+      else {
+        await ctx.database.create('signin', { id: session.userId, lastSignInDate: String(new Date()) })
+        // 续写签到逻辑
       }
     })
 
