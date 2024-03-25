@@ -100,8 +100,8 @@ export function apply(ctx: Context) {
         }
 
         // 模拟读取数据库中的签到信息
-        const lastSignInDate = String(userInfo[0]);
-        const consecutiveDays = Number(userInfo[1]);
+        const lastSignInDate = userInfo[0].lastSignInDate;
+        const consecutiveDays = userInfo[1].consecutiveDays;
 
         // 假设当前日期是 2024-03-25
         const currentDate = String(new Date());
