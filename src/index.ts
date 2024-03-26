@@ -28,7 +28,7 @@ export const Config: Schema<Config> = Schema.object({
 0，15，5
 16，25，35
 ......
-~~~`).required(),
+~~~`),
   提示语: Schema.array(String).role('table').description(`凌晨、早上、中午、下午、晚上、重复签到提示，必须按顺序，且=6。
 - 模板：
 ~~~
@@ -39,7 +39,7 @@ export const Config: Schema<Config> = Schema.object({
 晚上好~  签到✓    (◡ᴗ◡✿)
 今天已经签过到啦，明天再来吧~  (๑¯∀¯๑)。
 ~~~
-`).required(),
+`),
   连续奖励: Schema.tuple([Number, Number, Number]).default([5,35,5]).description(`连续签到额外奖励。最小值、最大值以及步长（增量）。`)
 })
 
