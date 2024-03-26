@@ -40,7 +40,7 @@ export const Config: Schema<Config> = Schema.object({
 今天已经签过到啦，明天再来吧~  (๑¯∀¯๑)。
 ~~~
 `),
-  连续奖励: Schema.tuple([Number, Number, Number]).default([5,35,5]).description(`连续签到额外奖励。最小值、最大值以及步长（增量）。`)
+  连续奖励: Schema.tuple([Number, Number, Number]).description(`连续签到额外奖励。最小值、最大值以及步长（增量）。`)
 })
 
 declare module 'koishi' {
