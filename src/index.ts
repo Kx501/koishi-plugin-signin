@@ -1,6 +1,5 @@
 import { Context, Schema, Logger, h } from 'koishi'
 import { } from 'koishi-plugin-monetary'
-import { config } from 'process'
 
 export const name = 'signin'
 export const inject = ['monetary']
