@@ -123,7 +123,7 @@ export function apply(ctx: Context) {
         return 0;
       }
 
-      // 模拟读取数据库中的签到信息
+      // 读取数据库中的签到信息
       const lastSignInDate = userInfo[0]?.lastSignInDate;
       const consecutiveDays = userInfo[0]?.consecutiveDays;
       const lastDay = lastSignInDate.split("-")[2]
@@ -145,7 +145,7 @@ export function apply(ctx: Context) {
       // 计算连续签到天数
       let newConsecutiveDays = consecutiveDays;
       if (currentDate.date === lastSignInDate) {
-        session.send('今天已经签到过了，明天再来吧~ ^_^。')
+        session.send('今天已经签过到啦，明天再来吧~ ^_^。')
       } else if (currentDate.day == Number(lastDay)+1) {
         newConsecutiveDays++; // 连续签到天数加一
         signinGreet();
@@ -157,7 +157,7 @@ export function apply(ctx: Context) {
       const bonus = calculateBonus(newConsecutiveDays);
 
       // 计算获得的积分
-      const basePoints = lottery(); // 假设调用了前面的抽奖函数
+      const basePoints = lottery(); // 调用了前面的抽奖函数
       const extraPoints = Math.floor(basePoints * bonus);
 
       // 更新数据库中的签到信息
