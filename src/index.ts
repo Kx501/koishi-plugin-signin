@@ -104,16 +104,13 @@ export function apply(ctx: Context) {
 
       const userInfo = await ctx.database.get('signin', { id: userAid }) 
       //const userInfo =[{ lastSignInDate: "2024-3-24", consecutiveDays: 0}]
+console.log(userInfo)
 
 
 // 添加用户数据
-      if (userInfo.length > 0){
-      console.log(userInfo)
+      if (userInfo.length === 0){
 
-} else {
-
-
-await ctx.database.create('signin', { id: Number(session.userId), lastSignInDate: formattedDate() })
+await ctx.database.create('signin', { id: Number(userAid), lastSignInDate: formattedDate() })
         // 续写签到逻辑
 }
       
