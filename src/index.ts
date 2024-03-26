@@ -25,7 +25,7 @@ declare module 'koishi' {
 }
 
 export interface Schedule {
-  id: string
+  id: number
   lastSignInDate: string
   consecutiveDays: number
 }
@@ -34,7 +34,7 @@ export function apply(ctx: Context) {
   // 这里是新增表的接口类型
   ctx.model.extend('signin', {
     // 各字段的类型声明
-    id: 'string',
+    id: 'integer',
     lastSignInDate: 'string',
     consecutiveDays: 'integer',
   })
@@ -81,23 +81,26 @@ export function apply(ctx: Context) {
     console.log(`第${i + 1}次抽奖结果：获得积分 ${lottery()}`);
   }
 
-function formattedDate() {
-const currentDate = new Date();
+  function formattedDate() {
+    const currentDate = new Date();
 
-const year = currentDate.getFullYear();
-const month = currentDate.getMonth() + 1; // 月份从 0 开始，所以需要加 1
-const day = currentDate.getDate();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1; // 月份从 0 开始，所以需要加 1
+    const day = currentDate.getDate();
 
-const formattedDate = `${year}-${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}`;
+    const formattedDate = `${year}-${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}`;
 
-return formattedDate; // 输出格式为 YYYY-MM-DD 的当前日期
-}
+    return formattedDate; // 输出格式为 YYYY-MM-DD 的当前日期
+  }
 
   ctx.command('签到', '每日签到')
     .action(async ({ session }) => {
-      const userId = await ctx.database.get('binding', { pid: [session.userId] }, ['aid'])[0]?.aid
-      // console.log(userId)
-      const userInfo = await ctx.database.get('signin', { id: userId })
+      console.log(session.userId)
+      const userId = await ctx.database.get('binding', { pid: [session.userId] }, ['aid'])
+      const userAid = userId[0]?.aid
+      console.log(userAid)
+      const userInfo = await ctx.database.get('signin', { id: userAid }) 
+      //const userInfo =[{ lastSignInDate: "2024-3-24", consecutiveDays: 0}]
       console.log(userInfo)
 
       // 添加用户数据
@@ -113,8 +116,8 @@ return formattedDate; // 输出格式为 YYYY-MM-DD 的当前日期
         }
 
         // 模拟读取数据库中的签到信息
-        const lastSignInDate = userInfo[0].lastSignInDate;
-        const consecutiveDays = userInfo[1].consecutiveDays;
+        const lastSignInDate = userInfo[0]?.lastSignInDate;
+        const consecutiveDays = userInfo[0]?.consecutiveDays;
 
         // 假设当前日期是 2024-03-25
         const currentDate = formattedDate();
@@ -135,7 +138,7 @@ return formattedDate; // 输出格式为 YYYY-MM-DD 的当前日期
         const extraPoints = Math.floor(basePoints * bonus);
 
         // 更新数据库中的签到信息
-        await ctx.database.set('signin', { id: session.userId }, { lastSignInDate: currentDate, consecutiveDays: newConsecutiveDays });
+        //await ctx.database.set('signin', { id: session.userId }, { lastSignInDate: currentDate, consecutiveDays: newConsecutiveDays });
 
         // 输出结果
         console.log(`连续签到天数：${newConsecutiveDays}`);
@@ -145,7 +148,7 @@ return formattedDate; // 输出格式为 YYYY-MM-DD 的当前日期
       }
 
       else {
-        await ctx.database.create('signin', { id: session.userId, lastSignInDate: formattedDate() })
+        await ctx.database.create('signin', { id: Number(session.userId), lastSignInDate: formattedDate() })
         // 续写签到逻辑
       }
     })
