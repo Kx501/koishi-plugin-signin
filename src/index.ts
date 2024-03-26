@@ -1,19 +1,43 @@
-import { Context, Schema, h } from 'koishi'
+import { Context, Schema, Logger, h } from 'koishi'
 import { } from 'koishi-plugin-monetary'
+import { config } from 'process'
 
 export const name = 'signin'
 export const inject = ['monetary']
+const logger = new Logger('signin');
 
-export interface Config { }
+export const usage = `
+  只测试了QQ频道。
+
+  - 签到提示信息分：凌晨，早上，中午，下午，晚上，时间段。
+  
+    - [0--7)，[7--11)，[11--13)，[13--20)，[20--24)
+`
+
+export interface Config {
+  积分区间: any,
+  提示语: any
+}
 
 export const Config: Schema<Config> = Schema.object({
-
-
+  积分区间: Schema.array(
+    Schema.tuple([Number, Number, Number]).description(`最小值、最大值以及概率。`)
+  ),
+  提示语: Schema.array(String).role('table').description(`凌晨、早上、中午、下午、晚上，必须按顺序，且=5。
+- 模板：
+~~~
+签到✓，该睡觉啦！ (つω｀)
+早上好！签到✓    (o-ωｑ)
+中午好！签到✓   (/▽＼)
+下午好~  签到✓    ╰(*°▽°*)╯
+晚上好~  签到✓    (◡ᴗ◡✿)
+~~~
+`)
 })
 
 declare module 'koishi' {
   interface Binding {
-    pid: string
+    pid: string,
     aid: number
   }
 }
@@ -25,27 +49,28 @@ declare module 'koishi' {
 }
 
 export interface Schedule {
-  id: number
-  lastSignInDate: string
+  id: number,
+  lastSignInDate: string,
   consecutiveDays: number
 }
 
-export function apply(ctx: Context) {
+export function apply(ctx: Context, config: Config) {
+
   // 这里是新增表的接口类型
   ctx.model.extend('signin', {
     // 各字段的类型声明
     id: 'integer',
     lastSignInDate: 'string',
-    consecutiveDays: 'integer',
+    consecutiveDays: 'integer'
   })
 
 
   // 定义积分区间和对应的概率
   const intervals = [
-    { min: 0, max: 15, probability: 0.10 },  // 第一档
-    { min: 16, max: 25, probability: 0.35 }, // 第二档
-    { min: 26, max: 40, probability: 0.50 }, // 第三档
-    { min: 41, max: 55, probability: 0.05 } // 第四档
+    { min: config.积分区间[0][0], max: config.积分区间[0][1], probability: config.积分区间[0][2] / 100 },  // 第一档
+    { min: config.积分区间[1][0], max: config.积分区间[1][1], probability: config.积分区间[1][2] / 100 }, // 第二档
+    { min: config.积分区间[2][0], max: config.积分区间[2][1], probability: config.积分区间[2][2] / 100 }, // 第三档
+    { min: config.积分区间[3][0], max: config.积分区间[3][1], probability: config.积分区间[3][2] / 100 } // 第四档
   ];
 
   // 计算总概率
@@ -84,7 +109,7 @@ export function apply(ctx: Context) {
 
   // 测试
   for (let i = 0; i < 10; i++) {
-    console.log(`第${i + 1}次抽奖结果：获得积分 ${lottery()}`);
+    logger.debug(`第${i + 1}次抽奖结果：获得积分 ${lottery()}`);
   }
 
   function formattedDate() {
@@ -102,12 +127,12 @@ export function apply(ctx: Context) {
   ctx.command('签到', '每日签到')
     .action(async ({ session }) => {
       let newUser = false;
-      const userId = await ctx.database.get('binding', { pid: [session.userId] }, ['aid'])
-      const userAid = userId[0]?.aid
-      console.log(userAid)
+      const userId = await ctx.database.get('binding', { pid: [session.userId] }, ['aid']);
+      const userAid = userId[0]?.aid;
+      logger.debug(userAid);
 
-      let userInfo = await ctx.database.get('signin', { id: userAid })
-      console.log(userInfo)
+      let userInfo = await ctx.database.get('signin', { id: userAid });
+      logger.debug(userInfo);
 
 
       // 假设当前日期是 2024-03-25
@@ -115,15 +140,15 @@ export function apply(ctx: Context) {
 
       // 添加用户数据
       if (userInfo.length === 0) {
-        await ctx.database.create('signin', { id: Number(userAid), lastSignInDate: currentDate.date })
-        userInfo = [{ id: userAid, lastSignInDate: currentDate.date, consecutiveDays: 0 }]
+        await ctx.database.create('signin', { id: Number(userAid), lastSignInDate: currentDate.date });
+        userInfo = [{ id: userAid, lastSignInDate: currentDate.date, consecutiveDays: 0 }];
         newUser = true;
       }
 
       // 读取数据库中的签到信息
       const lastSignInDate = userInfo[0]?.lastSignInDate;
       const consecutiveDays = userInfo[0]?.consecutiveDays;
-      const lastDay = lastSignInDate.split("-")[2]
+      const lastDay = lastSignInDate.split("-")[2];
 
       async function signinGreet() {
         const currentHour = currentDate.hour;
@@ -133,16 +158,18 @@ export function apply(ctx: Context) {
         const extraPoints = resultPoints.extraPoints;
         const bonus = resultPoints.bonus;
         const consecutiveDays = resultPoints.newConsecutiveDays;
-        const endStatement = `\n\n一共获得：${basePoints + extraPoints} 积分，基础积分：${basePoints}，额外积分：${extraPoints}。\n连续签到 ${consecutiveDays} 天，获得 ${bonus * 100}% 加成。`
+        const endStatement = `\n\n获得: ${basePoints + extraPoints} 积分，基础: ${basePoints}，额外: ${extraPoints}。\n连续签到 ${consecutiveDays} 天，获得 ${bonus * 100}% 加成。`;
 
-        if (currentHour >= 0 && currentHour <= 6) {
-          session.send(h('at', { id: session.userId }) + '签到✓，该睡觉啦！  (つω｀)' + endStatement)
-        } else if (currentHour > 6 && currentHour < 12) {
-          session.send(h('at', { id: session.userId }) + '早上好！签到✓  (o-ωｑ)' + endStatement)
-        } else if (currentHour >= 12 && currentHour < 20) {
-          session.send(h('at', { id: session.userId }) + '下午好~ 签到✓  (´v｀)' + endStatement)
+        if (currentHour >= 0 && currentHour < 7) {
+          session.send(h('at', { id: session.userId }) + config.提示语[0] + endStatement);
+        } else if (currentHour >= 7 && currentHour < 11) {
+          session.send(h('at', { id: session.userId }) + config.提示语[1] + endStatement);
+        } else if (currentHour >= 11 && currentHour < 13) {
+          session.send(h('at', { id: session.userId }) + config.提示语[2] + endStatement);
+        } else if (currentHour >= 13 && currentHour < 20) {
+          session.send(h('at', { id: session.userId }) + config.提示语[3] + endStatement);
         } else if (currentHour >= 20 && currentHour < 24) {
-          session.send(h('at', { id: session.userId }) + '晚上好~ 签到✓  (◡ᴗ◡✿)' + endStatement)
+          session.send(h('at', { id: session.userId }) + config.提示语[4] + endStatement);
         }
       }
 
@@ -167,7 +194,7 @@ export function apply(ctx: Context) {
 
         // 计算连续签到加成
         if (newConsecutiveDays > 0) {
-          bonus = Math.min(0.1 + (newConsecutiveDays - 1) * 0.05, 0.35); // 最高加成35%
+          bonus = Math.floor(Math.min(0.05 + (newConsecutiveDays - 1) * 0.05, 0.35)); // 初始5%+....<=35%
         }
 
         // 计算获得的积分
@@ -179,22 +206,17 @@ export function apply(ctx: Context) {
 
         const money = basePoints + extraPoints; // 更新用户余额
 
-        ctx.monetary.gain(userAid, money)
+        ctx.monetary.gain(userAid, money);
 
-        console.log(money)
+        logger.debug(money);
 
 
         // 输出结果
-        console.log(`连续签到天数：${newConsecutiveDays}`);
-        console.log(`连续签到加成：${bonus * 100}%`);
-        console.log(`基础积分：${basePoints}`);
-        console.log(`额外积分：${extraPoints}`);
+        logger.debug(`连续签到天数：${newConsecutiveDays}`);
+        logger.debug(`连续签到加成：${bonus * 100}%`);
+        logger.debug(`基础积分：${basePoints}`);
+        logger.debug(`额外积分：${extraPoints}`);
         return { basePoints, extraPoints, newConsecutiveDays, bonus }; // 返回获得的积分
       }
-
-
     })
-
-
-
 }
