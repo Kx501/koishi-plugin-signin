@@ -109,14 +109,6 @@ export function apply(ctx: Context) {
       let userInfo = await ctx.database.get('signin', { id: userAid })
       console.log(userInfo)
 
-      const monetary = await ctx.database.get('monetary', { uid: userAid });
-      const currency = monetary[0]?.currency;
-      let money = monetary[0]?.value;
-      console.log(money)
-      if (money === undefined) {
-        money = 0;
-      }
-
 
       // 假设当前日期是 2024-03-25
       const currentDate = formattedDate();
@@ -185,7 +177,7 @@ export function apply(ctx: Context) {
         // 更新数据库中的签到信息
         ctx.database.set('signin', { id: userAid }, { lastSignInDate: currentDate.date, consecutiveDays: newConsecutiveDays });
 
-        money += basePoints + extraPoints; // 更新用户余额
+        const money += basePoints + extraPoints; // 更新用户余额
 
         ctx.monetary.gain(userAid, money)
 
