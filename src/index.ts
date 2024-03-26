@@ -64,7 +64,7 @@ export function apply(ctx: Context) {
   }
 
   // 在区间内随机抽取一个数
-  function drawPoints(min, max) {
+  function drawPoints(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
@@ -87,10 +87,10 @@ export function apply(ctx: Context) {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1; // 月份从 0 开始，所以需要加 1
     const day = currentDate.getDate();
+    const hour = currentDate.getHours();
 
     const formattedDate = `${year}-${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}`;
-
-    return formattedDate; // 输出格式为 YYYY-MM-DD 的当前日期
+    return [formattedDate, day, hour]; // 输出格式为 YYYY-MM-DD 的当前日期
   }
 
   ctx.command('签到', '每日签到')
@@ -102,15 +102,16 @@ export function apply(ctx: Context) {
 
 
 
-      const userInfo = await ctx.database.get('signin', { id: userAid })
-      //const userInfo =[{ lastSignInDate: "2024-3-24", consecutiveDays: 0}]
+      let userInfo = await ctx.database.get('signin', { id: userAid })
       console.log(userInfo)
 
+      // 假设当前日期是 2024-03-25
+      const currentDate = formattedDate()[0];
 
       // 添加用户数据
       if (userInfo.length === 0) {
         await ctx.database.create('signin', { id: Number(userAid), lastSignInDate: formattedDate() })
-        // 续写签到逻辑
+        userInfo =[{ id: userAid, lastSignInDate: currentDate, consecutiveDays: 0}]
       }
 
 
@@ -126,15 +127,15 @@ export function apply(ctx: Context) {
       const lastSignInDate = userInfo[0]?.lastSignInDate;
       const consecutiveDays = userInfo[0]?.consecutiveDays;
 
-      // 假设当前日期是 2024-03-25
-      const currentDate = formattedDate();
 
-      // 计算连续签到天数是否连续
+      // 计算连续签到天数
       let newConsecutiveDays = consecutiveDays;
       if (currentDate === lastSignInDate) {
+        session.send('今天已经签到过了，明天再来吧~ ^_^。')
+      } else if () {
         newConsecutiveDays++; // 连续签到天数加一
       } else {
-        newConsecutiveDays = 1; // 重新开始连续签到计数
+        newConsecutiveDays = 0; // 重新开始连续签到计数
       }
 
       // 计算连续签到加成
