@@ -108,9 +108,9 @@ export function apply(ctx: Context, config: Config) {
   }
 
   // 测试
-  for (let i = 0; i < 10; i++) {
-    logger.debug(`第${i + 1}次抽奖结果：获得积分 ${lottery()}`);
-  }
+  // for (let i = 0; i < 10; i++) {
+  //   logger.info(`第${i + 1}次抽奖结果：获得积分 ${lottery()}`);
+  // }
 
   function formattedDate() {
     const currentDate = new Date();
