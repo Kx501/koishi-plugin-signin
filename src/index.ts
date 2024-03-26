@@ -177,7 +177,7 @@ export function apply(ctx: Context) {
         // 更新数据库中的签到信息
         ctx.database.set('signin', { id: userAid }, { lastSignInDate: currentDate.date, consecutiveDays: newConsecutiveDays });
 
-        const money += basePoints + extraPoints; // 更新用户余额
+        const money = basePoints + extraPoints; // 更新用户余额
 
         ctx.monetary.gain(userAid, money)
 
