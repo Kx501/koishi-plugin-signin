@@ -99,13 +99,24 @@ export function apply(ctx: Context) {
       const userId = await ctx.database.get('binding', { pid: [session.userId] }, ['aid'])
       const userAid = userId[0]?.aid
       console.log(userAid)
+
+
+
       const userInfo = await ctx.database.get('signin', { id: userAid }) 
       //const userInfo =[{ lastSignInDate: "2024-3-24", consecutiveDays: 0}]
+
+
+// 添加用户数据
+      if (userInfo.length > 0){
       console.log(userInfo)
 
-      // 添加用户数据
-      if (userInfo.length > 0) {
+} else {
 
+
+await ctx.database.create('signin', { id: Number(session.userId), lastSignInDate: formattedDate() })
+        // 续写签到逻辑
+}
+      
 
         // 计算连续签到加成
         function calculateBonus(consecutiveDays) {
@@ -145,12 +156,11 @@ export function apply(ctx: Context) {
         console.log(`连续签到加成：${bonus * 100}%`);
         console.log(`基础积分：${basePoints}`);
         console.log(`额外积分：${extraPoints}`);
-      }
+      
 
-      else {
-        await ctx.database.create('signin', { id: Number(session.userId), lastSignInDate: formattedDate() })
-        // 续写签到逻辑
-      }
+      
+        
+      
     })
 
 
