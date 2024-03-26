@@ -89,8 +89,8 @@ export function apply(ctx: Context) {
     const day = currentDate.getDate();
     const hour = currentDate.getHours();
 
-    const formattedDate = `${year}-${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}`;
-    return [formattedDate, day, hour]; // 输出格式为 YYYY-MM-DD 的当前日期
+    const date = `${year}-${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}`;
+    return {date, day, hour}; // 输出格式为 YYYY-MM-DD 的当前日期
   }
 
   ctx.command('签到', '每日签到')
@@ -106,12 +106,12 @@ export function apply(ctx: Context) {
       console.log(userInfo)
 
       // 假设当前日期是 2024-03-25
-      const currentDate = formattedDate()[0];
+      const currentDate = formattedDate();
 
       // 添加用户数据
       if (userInfo.length === 0) {
-        await ctx.database.create('signin', { id: Number(userAid), lastSignInDate: formattedDate() })
-        userInfo =[{ id: userAid, lastSignInDate: currentDate, consecutiveDays: 0}]
+        await ctx.database.create('signin', { id: Number(userAid), lastSignInDate: currentDate.date })
+        userInfo =[{ id: userAid, lastSignInDate: currentDate.date, consecutiveDays: 0}]
       }
 
 
@@ -126,14 +126,29 @@ export function apply(ctx: Context) {
       // 模拟读取数据库中的签到信息
       const lastSignInDate = userInfo[0]?.lastSignInDate;
       const consecutiveDays = userInfo[0]?.consecutiveDays;
+      const lastDay = lastSignInDate.split("-")[2]
+
+      function signinGreet() {
+        const currentHour = currentDate.hour;
+        if (currentHour >= 0 && currentHour <= 6) {
+          session.send('签到成功，该睡觉啦! (つω｀)')
+        } else if (currentHour > 6 && currentHour < 12) {
+          session.send('签到成功，早上好! (o-ωｑ)')
+        } else if (currentHour >= 12 && currentHour < 20) {
+          session.send('签到成功，下午好~ (￣▽￣)') 
+        } else if (currentHour >= 20 && currentHour < 24) {
+          session.send('签到成功，晚上好~ (◡ᴗ◡✿)')
+        }
+      }
 
 
       // 计算连续签到天数
       let newConsecutiveDays = consecutiveDays;
-      if (currentDate === lastSignInDate) {
+      if (currentDate.date === lastSignInDate) {
         session.send('今天已经签到过了，明天再来吧~ ^_^。')
-      } else if () {
+      } else if (currentDate.day == Number(lastDay)+1) {
         newConsecutiveDays++; // 连续签到天数加一
+        signinGreet();
       } else {
         newConsecutiveDays = 0; // 重新开始连续签到计数
       }
