@@ -102,62 +102,56 @@ export function apply(ctx: Context) {
 
 
 
-      const userInfo = await ctx.database.get('signin', { id: userAid }) 
+      const userInfo = await ctx.database.get('signin', { id: userAid })
       //const userInfo =[{ lastSignInDate: "2024-3-24", consecutiveDays: 0}]
-console.log(userInfo)
+      console.log(userInfo)
 
 
-// 添加用户数据
-      if (userInfo.length === 0){
-
-await ctx.database.create('signin', { id: Number(userAid), lastSignInDate: formattedDate() })
+      // 添加用户数据
+      if (userInfo.length === 0) {
+        await ctx.database.create('signin', { id: Number(userAid), lastSignInDate: formattedDate() })
         // 续写签到逻辑
-}
-      
+      }
 
-        // 计算连续签到加成
-        function calculateBonus(consecutiveDays) {
-          if (consecutiveDays > 0) {
-            return Math.min(0.1 + (consecutiveDays - 1) * 0.05, 0.35); // 最高加成35%
-          }
-          return 0;
+
+      // 计算连续签到加成
+      function calculateBonus(consecutiveDays) {
+        if (consecutiveDays > 0) {
+          return Math.min(0.1 + (consecutiveDays - 1) * 0.05, 0.35); // 最高加成35%
         }
+        return 0;
+      }
 
-        // 模拟读取数据库中的签到信息
-        const lastSignInDate = userInfo[0]?.lastSignInDate;
-        const consecutiveDays = userInfo[0]?.consecutiveDays;
+      // 模拟读取数据库中的签到信息
+      const lastSignInDate = userInfo[0]?.lastSignInDate;
+      const consecutiveDays = userInfo[0]?.consecutiveDays;
 
-        // 假设当前日期是 2024-03-25
-        const currentDate = formattedDate();
+      // 假设当前日期是 2024-03-25
+      const currentDate = formattedDate();
 
-        // 计算连续签到天数是否连续
-        let newConsecutiveDays = consecutiveDays;
-        if (currentDate === lastSignInDate) {
-          newConsecutiveDays++; // 连续签到天数加一
-        } else {
-          newConsecutiveDays = 1; // 重新开始连续签到计数
-        }
+      // 计算连续签到天数是否连续
+      let newConsecutiveDays = consecutiveDays;
+      if (currentDate === lastSignInDate) {
+        newConsecutiveDays++; // 连续签到天数加一
+      } else {
+        newConsecutiveDays = 1; // 重新开始连续签到计数
+      }
 
-        // 计算连续签到加成
-        const bonus = calculateBonus(newConsecutiveDays);
+      // 计算连续签到加成
+      const bonus = calculateBonus(newConsecutiveDays);
 
-        // 计算获得的积分
-        const basePoints = lottery(); // 假设调用了前面的抽奖函数
-        const extraPoints = Math.floor(basePoints * bonus);
+      // 计算获得的积分
+      const basePoints = lottery(); // 假设调用了前面的抽奖函数
+      const extraPoints = Math.floor(basePoints * bonus);
 
-        // 更新数据库中的签到信息
-        //await ctx.database.set('signin', { id: session.userId }, { lastSignInDate: currentDate, consecutiveDays: newConsecutiveDays });
+      // 更新数据库中的签到信息
+      //await ctx.database.set('signin', { id: session.userId }, { lastSignInDate: currentDate, consecutiveDays: newConsecutiveDays });
 
-        // 输出结果
-        console.log(`连续签到天数：${newConsecutiveDays}`);
-        console.log(`连续签到加成：${bonus * 100}%`);
-        console.log(`基础积分：${basePoints}`);
-        console.log(`额外积分：${extraPoints}`);
-      
-
-      
-        
-      
+      // 输出结果
+      console.log(`连续签到天数：${newConsecutiveDays}`);
+      console.log(`连续签到加成：${bonus * 100}%`);
+      console.log(`基础积分：${basePoints}`);
+      console.log(`额外积分：${extraPoints}`);
     })
 
 
