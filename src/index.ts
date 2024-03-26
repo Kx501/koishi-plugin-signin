@@ -9,21 +9,28 @@ const logger = new Logger('signin');
 export const usage = `
   只测试了QQ频道。
 
-  - 签到提示信息分：凌晨，早上，中午，下午，晚上，时间段。
+  - 签到提示信息分：凌晨，早上，中午，下午，晚上时间段。
   
     - [0--7)，[7--11)，[11--13)，[13--20)，[20--24)
 `
 
 export interface Config {
   积分区间: any,
-  提示语: any
+  提示语: any,
+  连续奖励: any,
 }
 
 export const Config: Schema<Config> = Schema.object({
   积分区间: Schema.array(
-    Schema.tuple([Number, Number, Number]).description(`最小值、最大值以及概率。`)
-  ),
-  提示语: Schema.array(String).role('table').description(`凌晨、早上、中午、下午、晚上，必须按顺序，且=5。
+    Schema.tuple([Number, Number, Number])
+  ).description(`最小值、最大值以及概率。
+- 模板：
+~~~
+0，15，5
+16，25，35
+......
+~~~`).required(),
+  提示语: Schema.array(String).role('table').description(`凌晨、早上、中午、下午、晚上、重复签到提示，必须按顺序，且=6。
 - 模板：
 ~~~
 签到✓，该睡觉啦！ (つω｀)
@@ -31,8 +38,10 @@ export const Config: Schema<Config> = Schema.object({
 中午好！签到✓   (/▽＼)
 下午好~  签到✓    ╰(*°▽°*)╯
 晚上好~  签到✓    (◡ᴗ◡✿)
+今天已经签过到啦，明天再来吧~  (๑¯∀¯๑)。
 ~~~
-`)
+`).required(),
+  连续奖励: Schema.tuple([Number, Number, Number]).default([5,35,5]).description(`连续签到额外奖励。最小值、最大值以及步长（增量）。`)
 })
 
 declare module 'koishi' {
@@ -177,7 +186,7 @@ export function apply(ctx: Context, config: Config) {
       // 计算连续签到天数
       let newConsecutiveDays = consecutiveDays;
       if (currentDate.date === lastSignInDate && !newUser) {
-        session.send(h('at', { id: session.userId }) + '今天已经签过到啦，明天再来吧~  (๑¯∀¯๑)。')
+        session.send(h('at', { id: session.userId }) + config.提示语[5])
       } else if (currentDate.day == Number(lastDay) + 1) {
         newConsecutiveDays++; // 连续签到天数加一
         signinGreet();

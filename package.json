@@ -1,6 +1,6 @@
 {
   "name": "@kxy051/koishi-plugin-signin",
-  "version": "0.0.1",
+  "version": "1.0.0-beta.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -11,11 +11,23 @@
   "keywords": [
     "chatbot",
     "koishi",
-    "plugin"
+    "plugin",
+    "signin"
   ],
   "peerDependencies": {
-    "koishi": "^4.17.3"
+    "koishi": "^4.17.3",
+    "koishi-plugin-monetary": "^0.1.3"
   },
-  "preview": true,
-  "hidden": true
+  "koishi": {
+    "locales": [
+      "zh"
+    ],
+    "preview": false,
+    "hidden": false
+  },
+  "service": {
+    "required": [
+      "monetary"
+    ]
+  }
 }
