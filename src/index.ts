@@ -6,7 +6,6 @@ export const inject = ['monetary']
 const logger = new Logger('signin');
 
 export const usage = `
-  只测试了QQ频道。
 
   - 签到提示信息分：凌晨，早上，中午，下午，晚上时间段。
   
@@ -202,7 +201,7 @@ export function apply(ctx: Context, config: Config) {
 
         // 计算连续签到加成
         if (newConsecutiveDays > 0) {
-          bonus = Math.floor(Math.min(0.05 + (newConsecutiveDays - 1) * 0.05, 0.35)); // 初始5%+....<=35%
+          bonus = Math.floor(Math.min(0.05 + newConsecutiveDays * 0.05, 0.35)); // 初始5%+....<=35%
         }
 
         // 计算获得的积分
