@@ -56,7 +56,7 @@ declare module 'koishi' {
 
 declare module 'koishi' {
   interface Tables {
-    signin: Table
+    signin_kxy051: Table
   }
 }
 
@@ -69,7 +69,7 @@ export interface Table {
 export function apply(ctx: Context, config: Config) {
 
   // 这里是新增表的接口类型
-  ctx.model.extend('signin', {
+  ctx.model.extend('signin_kxy051', {
     // 各字段的类型声明
     id: 'integer',
     lastSignInDate: 'string',
