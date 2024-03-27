@@ -1,5 +1,5 @@
 import { Context, Schema, Logger, h } from 'koishi'
-import { } from 'koishi-plugin-monetary'
+import {} from 'koishi-plugin-monetary'
 
 export const name = 'signin'
 export const inject = ['monetary']
@@ -18,7 +18,7 @@ export interface Config {
   连续奖励: any,
 }
 
-export const Config: Schema<Config> = Schema.object({
+export const Config: Schema < Config > = Schema.object({
   积分区间: Schema.array(
     Schema.tuple([Number, Number, Number])
   ).description(`最小值、最大值以及概率。
@@ -73,12 +73,17 @@ export function apply(ctx: Context, config: Config) {
 
 
   // 定义积分区间和对应的概率
-  const intervals = [
-    { min: config.积分区间[0][0], max: config.积分区间[0][1], probability: config.积分区间[0][2] / 100 },  // 第一档
-    { min: config.积分区间[1][0], max: config.积分区间[1][1], probability: config.积分区间[1][2] / 100 }, // 第二档
-    { min: config.积分区间[2][0], max: config.积分区间[2][1], probability: config.积分区间[2][2] / 100 }, // 第三档
-    { min: config.积分区间[3][0], max: config.积分区间[3][1], probability: config.积分区间[3][2] / 100 } // 第四档
-  ];
+  const intervals = [];
+
+  // 动态构建 intervals 数组
+  for (let i = 0; i < config.积分区间.length; i++) {
+    intervals.push({
+      min: config.积分区间[i][0],
+      max: config.积分区间[i][1],
+      probability: config.积分区间[i][2] / 100
+    });
+  }
+
 
   // 计算总概率
   let totalProbability = intervals.reduce((acc, curr) => acc + curr.probability, 0);
@@ -194,7 +199,7 @@ export function apply(ctx: Context, config: Config) {
       }
 
 
-      async function getPoints() {// 计算连续签到加成
+      async function getPoints() { // 计算连续签到加成
         newUser = false; // 重置新用户标记
 
         let bonus = 0; // 初始加成为0%
