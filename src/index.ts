@@ -56,11 +56,11 @@ declare module 'koishi' {
 
 declare module 'koishi' {
   interface Tables {
-    signin: Schedule
+    signin: Table
   }
 }
 
-export interface Schedule {
+export interface Table {
   id: number,
   lastSignInDate: string,
   consecutiveDays: number

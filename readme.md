@@ -2,4 +2,4 @@
 
 [![npm](https://img.shields.io/npm/v/@kxy051/koishi-plugin-signin?style=flat-square)](https://www.npmjs.com/package/@kxy051/koishi-plugin-signin)
 
-Koishi 签到插件，连续签到，自定义提示语和概率，支持bind
+Koishi 签到插件，连续签到，自定义提示语和概率，支持 bind
