@@ -67,6 +67,7 @@ export interface Table {
 }
 
 export function apply(ctx: Context, config: Config) {
+  ctx.database.drop('signin')
   let newUser = false;
 
   // 这里是新增表的接口类型
