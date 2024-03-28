@@ -89,7 +89,6 @@ export function apply(ctx: Context, config: Config) {
     });
   }
 
-
   // 计算总概率
   let totalProbability = intervals.reduce((acc, curr) => acc + curr.probability, 0);
   // 如果概率总和不为1，则按比例缩放每个概率值
@@ -103,6 +102,7 @@ export function apply(ctx: Context, config: Config) {
     // 重新计算总概率
     totalProbability = 1;
   }
+
 
   // 抽取积分区间
   function drawInterval() {
@@ -141,6 +141,60 @@ export function apply(ctx: Context, config: Config) {
     return { date, day, hour }; // 输出格式为 YYYY-MM-DD 的当前日期
   }
 
+  async function signinGreet() {
+    const currentHour = currentDate.hour;
+    const resultPoints = await getPoints();
+
+    const basePoints = resultPoints.basePoints;
+    const extraPoints = resultPoints.extraPoints;
+    const bonus = resultPoints.bonus;
+    const consecutiveDays = resultPoints.newConsecutiveDays;
+    const endStatement = `\n\n获得: ${basePoints + extraPoints} 积分，基础: ${basePoints}，额外: ${extraPoints}。\n连续签到 ${consecutiveDays} 天，获得 ${bonus}% 加成。`;
+
+    if (currentHour >= 0 && currentHour < 7) {
+      session.send(h('at', { id: session.userId }) + config.提示语[0] + endStatement);
+    } else if (currentHour >= 7 && currentHour < 11) {
+      session.send(h('at', { id: session.userId }) + config.提示语[1] + endStatement);
+    } else if (currentHour >= 11 && currentHour < 13) {
+      session.send(h('at', { id: session.userId }) + config.提示语[2] + endStatement);
+    } else if (currentHour >= 13 && currentHour < 20) {
+      session.send(h('at', { id: session.userId }) + config.提示语[3] + endStatement);
+    } else if (currentHour >= 20 && currentHour < 24) {
+      session.send(h('at', { id: session.userId }) + config.提示语[4] + endStatement);
+    }
+  }
+
+  async function getPoints() { // 计算连续签到加成
+    newUser = false; // 重置新用户标记
+
+    let bonus = 0; // 初始加成为0%
+
+    // 计算连续签到加成
+    if (newConsecutiveDays > 0) {
+      bonus = Math.floor(Math.min(config.连续奖励[0] + newConsecutiveDays * config.连续奖励[2], config.连续奖励[1])); // 初始5%+....<=35%
+    }
+
+    // 计算获得的积分
+    const basePoints = lottery(); // 调用了前面的抽奖函数
+    const extraPoints = Math.floor(basePoints * bonus / 100);
+
+    // 更新数据库中的签到信息
+    ctx.database.set('signin', { id: userAid }, { lastSignInDate: currentDate.date, consecutiveDays: newConsecutiveDays });
+
+    const money = basePoints + extraPoints; // 更新用户余额
+
+    ctx.monetary.gain(userAid, money);
+
+    logger.debug(money);
+
+    // 输出结果
+    logger.debug(`连续签到天数：${newConsecutiveDays}`);
+    logger.debug(`连续签到加成：${bonus}%`);
+    logger.debug(`基础积分：${basePoints}`);
+    logger.debug(`额外积分：${extraPoints}`);
+    return { basePoints, extraPoints, newConsecutiveDays, bonus }; // 返回获得的积分
+  }
+
   ctx.command('签到', '每日签到')
     .action(async ({ session }) => {
       let newUser = false;
@@ -150,7 +204,6 @@ export function apply(ctx: Context, config: Config) {
 
       let userInfo = await ctx.database.get('signin', { id: userAid });
       logger.debug(userInfo);
-
 
       // 假设当前日期是 2024-03-25
       const currentDate = formattedDate();
@@ -167,30 +220,6 @@ export function apply(ctx: Context, config: Config) {
       const consecutiveDays = userInfo[0]?.consecutiveDays;
       const lastDay = lastSignInDate.split("-")[2];
 
-      async function signinGreet() {
-        const currentHour = currentDate.hour;
-        const resultPoints = await getPoints();
-
-        const basePoints = resultPoints.basePoints;
-        const extraPoints = resultPoints.extraPoints;
-        const bonus = resultPoints.bonus;
-        const consecutiveDays = resultPoints.newConsecutiveDays;
-        const endStatement = `\n\n获得: ${basePoints + extraPoints} 积分，基础: ${basePoints}，额外: ${extraPoints}。\n连续签到 ${consecutiveDays} 天，获得 ${bonus * 100}% 加成。`;
-
-        if (currentHour >= 0 && currentHour < 7) {
-          session.send(h('at', { id: session.userId }) + config.提示语[0] + endStatement);
-        } else if (currentHour >= 7 && currentHour < 11) {
-          session.send(h('at', { id: session.userId }) + config.提示语[1] + endStatement);
-        } else if (currentHour >= 11 && currentHour < 13) {
-          session.send(h('at', { id: session.userId }) + config.提示语[2] + endStatement);
-        } else if (currentHour >= 13 && currentHour < 20) {
-          session.send(h('at', { id: session.userId }) + config.提示语[3] + endStatement);
-        } else if (currentHour >= 20 && currentHour < 24) {
-          session.send(h('at', { id: session.userId }) + config.提示语[4] + endStatement);
-        }
-      }
-
-
       // 计算连续签到天数
       let newConsecutiveDays = consecutiveDays;
       if (currentDate.date === lastSignInDate && !newUser) {
@@ -201,39 +230,6 @@ export function apply(ctx: Context, config: Config) {
       } else {
         newConsecutiveDays = 0; // 重新开始连续签到计数
         signinGreet();
-      }
-
-
-      async function getPoints() { // 计算连续签到加成
-        newUser = false; // 重置新用户标记
-
-        let bonus = 0; // 初始加成为0%
-
-        // 计算连续签到加成
-        if (newConsecutiveDays > 0) {
-          bonus = Math.floor(Math.min(0.05 + newConsecutiveDays * 0.05, 0.35)); // 初始5%+....<=35%
-        }
-
-        // 计算获得的积分
-        const basePoints = lottery(); // 调用了前面的抽奖函数
-        const extraPoints = Math.floor(basePoints * bonus);
-
-        // 更新数据库中的签到信息
-        ctx.database.set('signin', { id: userAid }, { lastSignInDate: currentDate.date, consecutiveDays: newConsecutiveDays });
-
-        const money = basePoints + extraPoints; // 更新用户余额
-
-        ctx.monetary.gain(userAid, money);
-
-        logger.debug(money);
-
-
-        // 输出结果
-        logger.debug(`连续签到天数：${newConsecutiveDays}`);
-        logger.debug(`连续签到加成：${bonus * 100}%`);
-        logger.debug(`基础积分：${basePoints}`);
-        logger.debug(`额外积分：${extraPoints}`);
-        return { basePoints, extraPoints, newConsecutiveDays, bonus }; // 返回获得的积分
       }
     })
 }
