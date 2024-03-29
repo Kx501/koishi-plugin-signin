@@ -1,5 +1,5 @@
 import { Context, Schema, Logger, h } from 'koishi'
-import {} from 'koishi-plugin-monetary'
+import { } from 'koishi-plugin-monetary'
 
 export const name = 'signin'
 export const inject = ['monetary']
@@ -23,7 +23,7 @@ export interface Config {
   连续奖励: any,
 }
 
-export const Config: Schema < Config > = Schema.object({
+export const Config: Schema<Config> = Schema.object({
   积分区间: Schema.array(
     Schema.tuple([Number, Number, Number])
   ).description(`最小值、最大值以及概率。
@@ -182,13 +182,13 @@ export function apply(ctx: Context, config: Config) {
       async function signinGreet() {
         const currentHour = currentDate.hour;
         const resultPoints = await getPoints();
-    
+
         const basePoints = resultPoints.basePoints;
         const extraPoints = resultPoints.extraPoints;
         const bonus = resultPoints.bonus;
         const consecutiveDays = resultPoints.newConsecutiveDays;
         const endStatement = `\n\n获得: ${basePoints + extraPoints} 积分，基础: ${basePoints}，额外: ${extraPoints}。\n连续签到 ${consecutiveDays} 天，获得 ${bonus}% 加成。`;
-    
+
         if (currentHour >= 0 && currentHour < 7) {
           session.send(h('at', { id: session.userId }) + config.提示语[0] + endStatement);
         } else if (currentHour >= 7 && currentHour < 11) {
@@ -204,27 +204,27 @@ export function apply(ctx: Context, config: Config) {
 
       async function getPoints() { // 计算连续签到加成
         newUser = false; // 重置新用户标记
-    
+
         let bonus = 0; // 初始加成为0%
-    
+
         // 计算连续签到加成
         if (newConsecutiveDays > 0) {
-          bonus = Math.floor(Math.min(config.连续奖励[0] + newConsecutiveDays * config.连续奖励[2], config.连续奖励[1])); // 初始5%+....<=35%
+          bonus = Math.floor(Math.min(config.连续奖励[0] + (newConsecutiveDays - 1) * config.连续奖励[2], config.连续奖励[1])); // 初始5%+....<=35%
         }
-    
+
         // 计算获得的积分
         const basePoints = lottery(); // 调用了前面的抽奖函数
         const extraPoints = Math.floor(basePoints * bonus / 100);
-    
+
         // 更新数据库中的签到信息
         ctx.database.set('signin_kxy051', { id: userAid }, { lastSignInDate: currentDate.date, consecutiveDays: newConsecutiveDays });
-    
+
         const money = basePoints + extraPoints; // 更新用户余额
-    
+
         ctx.monetary.gain(userAid, money);
-    
+
         logger.debug(money);
-    
+
         // 输出结果
         logger.debug(`连续签到天数：${newConsecutiveDays}`);
         logger.debug(`连续签到加成：${bonus}%`);

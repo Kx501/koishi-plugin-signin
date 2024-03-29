@@ -1,7 +1,7 @@
 {
   "name": "@kxy051/koishi-plugin-signin",
   "description": "签到，连续奖励，分时间段自定义提示语。",
-  "version": "1.0.0-beta.7",
+  "version": "1.0.0-beta.8",
   "contributors": [
     "kxy051 <a2483654847@gmail.com>"
   ],
