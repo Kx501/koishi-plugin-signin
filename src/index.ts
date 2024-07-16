@@ -1,8 +1,8 @@
 import { Context, Schema, Logger, h } from 'koishi'
-import { } from 'koishi-plugin-monetary'
+import {  } from 'koishi-plugin-monetary'
 
 export const name = 'signin'
-export const inject = ['monetary']
+export const inject = ['monetary', 'database']
 const logger = new Logger('signin');
 
 export const usage = `
