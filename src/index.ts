@@ -1,5 +1,5 @@
 import { Context, Schema, Logger, h } from 'koishi'
-import {  } from 'koishi-plugin-monetary'
+import { } from 'koishi-plugin-monetary'
 
 export const name = 'signin'
 export const inject = ['monetary', 'database']
@@ -56,7 +56,7 @@ declare module 'koishi' {
 
 declare module 'koishi' {
   interface Tables {
-    signin_kxy051: Table
+    signin_kx: Table
   }
 }
 
@@ -70,7 +70,7 @@ export function apply(ctx: Context, config: Config) {
   let newUser = false;
 
   // 这里是新增表的接口类型
-  ctx.model.extend('signin_kxy051', {
+  ctx.model.extend('signin_kx', {
     // 各字段的类型声明
     id: 'integer',
     lastSignInDate: 'string',
@@ -149,7 +149,7 @@ export function apply(ctx: Context, config: Config) {
       const userAid = userId[0]?.aid;
       logger.debug(userAid);
 
-      let userInfo = await ctx.database.get('signin_kxy051', { id: userAid });
+      let userInfo = await ctx.database.get('signin_kx', { id: userAid });
       logger.debug(userInfo);
 
       // 假设当前日期是 2024-03-25
@@ -157,7 +157,7 @@ export function apply(ctx: Context, config: Config) {
 
       // 添加用户数据
       if (userInfo.length === 0) {
-        await ctx.database.create('signin_kxy051', { id: Number(userAid), lastSignInDate: currentDate.date });
+        await ctx.database.create('signin_kx', { id: Number(userAid), lastSignInDate: currentDate.date });
         userInfo = [{ id: userAid, lastSignInDate: currentDate.date, consecutiveDays: 0 }];
         newUser = true;
       }
@@ -217,7 +217,7 @@ export function apply(ctx: Context, config: Config) {
         const extraPoints = Math.floor(basePoints * bonus / 100);
 
         // 更新数据库中的签到信息
-        ctx.database.set('signin_kxy051', { id: userAid }, { lastSignInDate: currentDate.date, consecutiveDays: newConsecutiveDays });
+        ctx.database.set('signin_kx', { id: userAid }, { lastSignInDate: currentDate.date, consecutiveDays: newConsecutiveDays });
 
         const money = basePoints + extraPoints; // 更新用户余额
 

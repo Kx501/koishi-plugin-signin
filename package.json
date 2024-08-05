@@ -1,9 +1,9 @@
 {
-  "name": "@kxy051/koishi-plugin-signin",
+  "name": "@kx501/koishi-plugin-signin",
   "description": "签到，连续奖励，分时间段自定义提示语。",
-  "version": "1.0.0-beta.9",
+  "version": "1.0.0-beta.1",
   "contributors": [
-    "kxy051 <a2483654847@gmail.com>"
+    "kx501 <x501@foxmail.com>"
   ],
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -12,10 +12,10 @@
     "dist"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/Kxy051/koishi-plugin-signin",
+  "homepage": "https://github.com/Kx501/koishi-plugin-signin",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Kxy051/koishi-plugin-signin.git"
+    "url": "git+https://github.com/Kx501/koishi-plugin-signin.git"
   },
   "keywords": [
     "chatbot",
@@ -24,7 +24,7 @@
     "signin"
   ],
   "peerDependencies": {
-    "koishi": "^4.17.3",
+    "koishi": "^4.17.9",
     "koishi-plugin-monetary": "^0.1.3"
   },
   "koishi": {
