@@ -28,9 +28,6 @@
     "koishi-plugin-monetary": "^0.1.3"
   },
   "koishi": {
-    "locales": [
-      "zh"
-    ],
     "preview": false,
     "hidden": true
   },
