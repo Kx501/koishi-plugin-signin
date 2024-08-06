@@ -48,13 +48,6 @@ export const Config: Schema<Config> = Schema.object({
 })
 
 declare module 'koishi' {
-  interface Binding {
-    pid: string,
-    aid: number
-  }
-}
-
-declare module 'koishi' {
   interface Tables {
     signin_kx: Table
   }
@@ -145,8 +138,7 @@ export function apply(ctx: Context, config: Config) {
   ctx.command('签到', '每日签到')
     .action(async ({ session }) => {
       newUser = false;
-      const userId = await ctx.database.get('binding', { pid: [session.userId] }, ['aid']);
-      const userAid = userId[0]?.aid;
+      const userAid = (await ctx.database.get('binding', { pid: [session.userId] }, ['aid']))[0]?.aid;
       logger.debug(userAid);
 
       let userInfo = await ctx.database.get('signin_kx', { id: userAid });
