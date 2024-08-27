@@ -24,17 +24,17 @@
     "signin"
   ],
   "peerDependencies": {
-    "koishi": "^4.17.9",
-    "koishi-plugin-monetary": "^0.1.3"
+    "koishi": "^4.17.9"
   },
   "koishi": {
-    "preview": false,
+    "service": {
+      "required": [
+        "monetary",
+        "database"
+      ],
+      "optional": []
+    },
+    "preview": true,
     "hidden": true
-  },
-  "service": {
-    "required": [
-      "monetary",
-      "database"
-    ]
   }
 }

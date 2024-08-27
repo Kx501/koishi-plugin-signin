@@ -1,26 +1,21 @@
-import { Context, Schema, Logger, h } from 'koishi'
+import { Context, Schema, Logger, h, Random, Time } from 'koishi'
 import { } from 'koishi-plugin-monetary'
 
 export const name = 'signin'
 export const inject = ['monetary', 'database']
-const logger = new Logger('signin');
+const log = new Logger('signin');
 
 export const usage = `
 
   - 签到提示信息分：凌晨，早上，中午，下午，晚上时间段。
   
     - [0--7)，[7--11)，[11--13)，[13--20)，[20--24)
-  
-  - 奇奇怪怪的 Bug 以及解决办法：
-    - “积分区间” 和 “提示语” 只能添加一行。
-      - “积分区间”设置：随意选择一项，点击右侧 “...” 图标，点击 “在上/下方插入”。
-      - “提示语”设置：直接添加 6 行，然后首先填入最后一项。
 `
 
 export interface Config {
-  积分区间: any,
-  提示语: any,
-  连续奖励: any,
+  积分区间: number[][],
+  提示语: string[],
+  连续奖励: number[],
 }
 
 export const Config: Schema<Config> = Schema.object({
@@ -70,18 +65,8 @@ export function apply(ctx: Context, config: Config) {
     consecutiveDays: 'integer'
   })
 
-
   // 定义积分区间和对应的概率
-  const intervals = [];
-
-  // 动态构建 intervals 数组
-  for (let i = 0; i < config.积分区间.length; i++) {
-    intervals.push({
-      min: config.积分区间[i][0],
-      max: config.积分区间[i][1],
-      probability: config.积分区间[i][2] / 100
-    });
-  }
+  const intervals = config.积分区间.map(([min, max, probability]) => ({ min, max, probability: probability / 100 }));
 
   // 计算总概率
   let totalProbability = intervals.reduce((acc, curr) => acc + curr.probability, 0);
@@ -97,59 +82,52 @@ export function apply(ctx: Context, config: Config) {
     totalProbability = 1;
   }
 
-
   // 抽取积分区间
   function drawInterval() {
-    const rand = Math.random() * totalProbability;
-    let cumulativeProbability = 0;
-    for (const interval of intervals) {
-      cumulativeProbability += interval.probability;
-      if (rand < cumulativeProbability) {
-        return interval;
-      }
-    }
+    const weights = intervals.reduce((acc, curr) => {
+      acc[curr.min] = curr.probability;
+      return acc;
+    }, {} as Record<number, number>);
+    const min = Number(Random.weightedPick(weights));
+    return intervals.find(interval => interval.min === min);
   }
 
   // 抽奖函数
   function lottery() {
     const selectedInterval = drawInterval();
+    if (!selectedInterval) {
+      throw new Error('No interval selected');
+    }
     const { min, max } = selectedInterval;
-    const points = Math.floor(Math.random() * (max - min + 1)) + min;
+    const points = Random.int(min, max + 1);
     return points;
   }
 
-  // 测试
-  // for (let i = 0; i < 10; i++) {
-  //   logger.info(`第${i + 1}次抽奖结果：获得积分 ${lottery()}`);
-  // }
-
   function formattedDate() {
     const currentDate = new Date();
-
     const year = currentDate.getFullYear();
-    const month = currentDate.getMonth() + 1; // 月份从 0 开始，所以需要加 1
-    const day = currentDate.getDate();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const date = `${year}-${month}-${day}`; // 确保格式为 YYYY-MM-DD
     const hour = currentDate.getHours();
-
-    const date = `${year}-${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}`;
-    return { date, day, hour }; // 输出格式为 YYYY-MM-DD 的当前日期
+    return { date, hour }; // 输出格式为 YYYY-MM-DD 的当前日期
   }
 
   ctx.command('签到', '每日签到')
     .action(async ({ session }) => {
       newUser = false;
       const userAid = (await ctx.database.get('binding', { pid: [session.userId] }, ['aid']))[0]?.aid;
-      logger.debug(userAid);
+      log.debug(userAid);
 
       let userInfo = await ctx.database.get('signin_kx', { id: userAid });
-      logger.debug(userInfo);
+      log.debug(userInfo);
 
       // 假设当前日期是 2024-03-25
       const currentDate = formattedDate();
 
       // 添加用户数据
       if (userInfo.length === 0) {
-        await ctx.database.create('signin_kx', { id: Number(userAid), lastSignInDate: currentDate.date });
+        await ctx.database.create('signin_kx', { id: Number(userAid), lastSignInDate: currentDate.date, consecutiveDays: 0 });
         userInfo = [{ id: userAid, lastSignInDate: currentDate.date, consecutiveDays: 0 }];
         newUser = true;
       }
@@ -157,13 +135,12 @@ export function apply(ctx: Context, config: Config) {
       // 读取数据库中的签到信息
       const lastSignInDate = userInfo[0]?.lastSignInDate;
       const consecutiveDays = userInfo[0]?.consecutiveDays;
-      const lastDay = lastSignInDate.split("-")[2];
 
       // 计算连续签到天数
       let newConsecutiveDays = consecutiveDays;
       if (currentDate.date === lastSignInDate && !newUser) {
         session.send(h('at', { id: session.userId }) + config.提示语[5])
-      } else if (currentDate.day == Number(lastDay) + 1) {
+      } else if (Time.getDateNumber(Time.parseDate(currentDate.date)) === Time.getDateNumber(Time.parseDate(lastSignInDate)) + 1) {
         newConsecutiveDays++; // 连续签到天数加一
         signinGreet();
       } else {
@@ -215,13 +192,13 @@ export function apply(ctx: Context, config: Config) {
 
         ctx.monetary.gain(userAid, money);
 
-        logger.debug(money);
+        log.debug(money);
 
         // 输出结果
-        logger.debug(`连续签到天数：${newConsecutiveDays}`);
-        logger.debug(`连续签到加成：${bonus}%`);
-        logger.debug(`基础积分：${basePoints}`);
-        logger.debug(`额外积分：${extraPoints}`);
+        log.debug(`连续签到天数：${newConsecutiveDays}`);
+        log.debug(`连续签到加成：${bonus}%`);
+        log.debug(`基础积分：${basePoints}`);
+        log.debug(`额外积分：${extraPoints}`);
         return { basePoints, extraPoints, newConsecutiveDays, bonus }; // 返回获得的积分
       }
     })
